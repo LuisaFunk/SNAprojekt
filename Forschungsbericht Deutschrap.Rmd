@@ -1,0 +1,1648 @@
+---
+title: "Forschungsbericht Soziale Netzwerke"
+author: "Gruppe 3 | Projektleitung Luisa Funk, lf067@hdm-stuttgart.de"
+date: "Wintersemester 2021/22"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+subtitle: Analyse der Beziehungen im Deutschrap
+---
+
+__Abstract und Keywords__
+
+Im Rahmen dieses Forschungsberichts analysieren wir in einem ungerichteten one-mode Netzwerk die Beziehungen von insgesamt 60 Rapper/innen aus dem deutschsprachigen Raum. Die Beziehungsdimensionen umfassen drei Attribute: Label, Feature und Beziehung. Die Analyse zeigt, dass es im Deutschrap viele einzelne Gruppierungen von Akteuren gibt, die untereinander durch Labelzugehörigkeit oder Kollaborationen eng vernetzt sind. Sowohl das Geschlecht der Rapper/innen als auch weitere Faktoren wie die Nationalität oder der Wohnort scheinen Einfluss darauf zu nehmen, mit wem die Akteure zusammenarbeiten. Aus unserer Analyse können wir außerdem schließen, dass sich die Vernetzung der Rapper/innen auf deren Erfolg auswirken kann. Akteure, die viele oder bessere Beziehungen zu anderen Akteuren haben, sind im Schnitt erfolgreicher als Rapper/innen mit weniger Verbindungen. 
+
+Keywords: Netzwerkanalyse, Beziehungen, Deutschrap, Rap, Geschlecht, Label, Features, Künstler, Musik, Nationalität, Kriminalität 
+
+# Einleitung 
+
+In unserer Netzwerkanalyse untersuchen wir die Beziehungen von insgesamt 60 Rapper/innen aus dem deutschsprachigen Raum. Die Auswahl der Akteure basiert auf der jeweiligen Anzahl monatlicher Spotify-Hörer. Anhand dieser Werte haben wir die 50 aktuell erfolgreichsten männlichen und die 10 aktuell erfolgreichsten weiblichen Rapperinnen bestimmt. Dabei legen wir einen besonderen Fokus auf die Unterschiede zwischen den Geschlechtern. Für die Erstellung des Netzwerks wurden Informationen über die Rapper/innen (Künstlername, bürgerlicher Name, Geschlecht, Alter Nationalität, Wohnort), sowie die Anzahl der monatlichen Hörer auf der Streaming-Plattform Spotify und bisherige Straftaten/Auffälligkeiten der Akteure erhoben (Stand: Juni, 2021). Auf der Beziehungsebene haben wir uns angesehen, welche Rapper/innen im selben Musiklabel sind oder waren, wer wie intensiv mit wem Musik produziert hat und wie die Akteure zueinander stehen. 
+
+# Forschungsstand 
+Soweit wir feststellen konnten, ist die Forschung auf unserem Themengebiet bisher nicht sehr fortgeschritten. Zwar gibt es vereinzelt Studien über die deutsche Rap-Szene, diese untersuchen allerdings eher die Inhalte der Lieder auf Antisemitismus oder Sexismus, statt die Akteure selbst bzw. deren Beziehungen. Auf ähnliche Studien kann an dieser Stelle also nicht verwiesen werden.
+
+# Arbeitshypothesen 
+Wir gehen von den folgenden Arbeitshypothesen aus: 
+1) Männliche Akteure featuren häufiger mit anderen männlichen Akteuren und umgekehrt.
+2) Männliche Akteure sind im Schnitt erfolgreicher und besser vernetzt, als weibliche Akteure. 
+3) Rapper/innen, die im selben Label sind oder waren kollaborieren häufiger. 
+4) Rapper/innen, die gut vernetzt sind, sind erfolgreicher.
+5) Es gibt einzelne Gruppierungen von Rapper/innen, die sehr eng vernetzt sind, sowie einige außenstehende Rapper/innen mit kaum oder keinen Beziehungen.
+6) Homophilie spielt bei den Beziehungen eine Rolle: z.B. in Bezug auf Alter, Wohnort oder Nationalität. 
+7) Das Verhältnis untereinander ist größtenteils neutral oder positiv, es gibt allerdings vereinzelte Konflikte zwischen Rapper/innen.
+
+# Datenerhebung: Zugang, Bereinigung und Codebuch
+
+# Datenzugang 
+Die Daten wurden im Sommer 2021 über öffentlich zugängliche Webseiten und Plattformen erhoben. Wir haben vor allem die Streaming-Plattform Spotify genutzt, um die monatlichen Hörer und die Features der Rapper/innen zu erheben. Die Labelzugehörigkeit und die Nodeattribute haben wir größtenteils über die Webseite Wikipedia gesammelt. Um Informationen über das Verhältnis der Rapper/innen zueinander zu finden, haben wir uns deren Instagram-Profile angesehen und uns darüber hinaus Online-Zeitungsartikel und Blogbeiträge durchgelesen. Weitere (fehlende) Daten wie beispielsweise die Vorstrafen der Rapper/innen haben ebenfalls über Online-Artikel oder andere Webseiten gesammelt. 
+
+# Bereinigung des Datensatzes
+Die Daten aus der Datenerhebung wurden anschließend zusammengetragen und codiert. Im Laufe dieses Prozesses musste die Codierung allerdings bei einigen Attributen aufgrund neuer Erkenntnisse, wie beispielsweise einer unerwarteten Beziehungsform ("relationship"= 4 -> Verwandschaft) leicht umgeändert werden. 
+
+# Codebuch 
+Das [Codebuch](https://github.com/LuisaFunk/SNAprojekt/blob/main/Codebuch.csv) umfasst die erhobenen Variablen, Relationen und Gewichte des Netzwerks und ist auf Github hinterlegt.
+
+```{r Gesamnetzwerk erstellen, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+library(igraph)
+
+# Einlesen der Edgelist aus github link: beachte den Separator ","
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+
+# wandelt die Edgelist als Matrix um.
+edgematrix <-as.matrix(edges)
+
+# erstellt ein igraph-objekt aus der Fusion von Edge- und Nodelist
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+```
+
+```{r Beschreibung des Netzwerks, message=FALSE, warning=FALSE, paged.print=TRUE}
+# Parameter zu Beschreibung des Netzwerks
+
+## ist das Netzwerk bereits vereinfacht?
+is.simple(d)
+
+## besteht das Netzwerk aus Komponenten?
+## wenn ja, wie vielen?
+is.connected(d)
+components(d)
+
+## Dichte des Netzwerks
+edge_density(d, loops=FALSE)
+
+## Umfang des Netzwerks
+diameter(d)
+
+## Pfaddistanzen (Distance)
+farthest_vertices(d)
+```
+
+Das Hauptnetzwerk besteht aus einer Komponente mit  60 Knoten. Die Dichte im Netzwerk beträgt 16,84 Prozent von allen möglichen Verbindungen. Die maximale Pfaddistanz beträgt 5 Schritte.
+
+```{r Einfache Visualisierung des erstellten Objekt, fig.height=10, fig.width=14, message=TRUE, warning=TRUE, paged.print=TRUE}
+
+# Pro-Tipp: die Ausgabe jedes "chunks" lässt sich über das Rädchen direkt unter der Chunk-Beschreibung einstellen. Hier habe ich die Bildfläche auf 10 auf 16 Inches eingestellt, d.h. das Netzwerk wird automatisch auf eine Fläche von 10 auf 16 Inches geplottet. Für den Anfang empfehle ich immer bei Netzwerken bis 50 Knoten mit dem Kamada-Kawai Algorithmus zu arbeiten, weil hier die Knoten immer an die gleiche Position gesetzt werden und wir dadurch Abweichungen besser erkennen können.
+
+plot(d,
+     asp=0, 
+     layout=layout_with_kk,
+     edge.arrow.size=.5,
+     vertex.size=10,
+     main ="Übersicht Gesamtnetzwerk")
+```
+
+__Nur starke Beziehungen im Gesamtnetzwerk__
+
+Für dieses Netzwerk sollen nun nur noch starke Beziehungen mit einem Gewicht von >= 2 angezeigt werden. Damit wird das Netzwerk in ein neues Teilnetzwerk zerlegt, das nur noch aus starken Beziehungen besteht:
+
+```{r Starke Beziehungen im Gesamtnetzwerk, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=TRUE}
+
+# erstellt ein Teilnetzwerk nur aus starker Zusammenarbeit
+d_strong <- subgraph.edges(d, E(d)[feature>=2]) 
+d_strong
+edge.attributes(d_strong)$feature
+
+plot(d_strong,
+     asp=0,
+     layout=layout_with_kk,
+     #vertex.size=3,
+     vertex.frame.color=NA,
+     vertex.color="lightgreen",
+     vertex.label.color="grey20",
+     vertex.label.cex=2,
+     #edge.arrow.size=2,
+     edge.color="lightgreen",
+     edge.curved=.3,
+     edge.curved=curve_multiple(d_strong),
+     )
+
+title("Gesamtnetzwerk: Starke Zusammenarbeit", 
+      sub = "Gewicht >= 2",
+      cex.main = 2, col.main= "black",
+      cex.sub = 2, font.sub = 3, col.sub = "black")
+
+
+```
+
+
+```{r Hervorhebung der populärsten Knoten im Netzwerk, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+dd <- degree(d)
+dd
+which.max(dd) # Capital Bra ist der Rapper mit den meisten Degress, also den meisten Features
+
+bd <- betweenness (d, normalized=T)
+bd
+which.max(bd)
+
+# mit der Auswahl der Knoten lassen sich deren Rahmenfarben spezifisch angeben
+
+V(d)[V(d)$name == "Bausa"]$color <- "green"
+V(d)[V(d)$name == "Capital Bra"]$color <- "red"
+
+plot(d,
+     layout=layout_as_star,
+     vertex.size=15,
+     # vertex.label.cex=2,
+     # vertex.frame.color=NA,(muss ausgeschaltet sein, damit die Knoten visualisiert werden können
+     edge.arrow.size=.5,
+     edge.color="grey80",
+     edge.width=E(d)$weight/2, #halbiert den Wert der Gewichte, um eine bessere Darstellung zu ermöglichen
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     )
+
+title("Gesamtnetzwerk", 
+      sub = "beliebteste Knoten in grün (stärkste Beziehungen) und rot (höchste Degrees)",
+      cex.main = 2, col.main= "black",
+      cex.sub = 2, font.sub = 3, col.sub = "black")
+
+
+```
+
+```{r Auslesen von Attributen}
+# Beispiel für das Vertex-Attribut Heimat
+vertex.attributes(d)$home
+edge.attributes(d)$relationship
+# wichtig: sind keine Werte gesetzt, dann behandelt igraph den Wert als NA, also not available. Das ist wichtig für die Kalkulation der Netzwerkbeziehungen. 
+
+```
+
+## Analyse der Teilnetzwerke 
+
+Für dieses Netzwerk ist besonders der Vergleich zwischen Teilnetzwerken interessant. 
+
+Das bedeutet, dass es folgende Teilnetzwerke aufgrund der Edge-Attribute gibt:
+- musiclabels, Rapper/innen sind im gleichen Musiklabel
+- Beziehungsarten, in welcher Beziehung stehen die Rapper/innen zueinander (positiv, Feindschaft, Verwandtschaft)?
+
+Darüber hinaus gibt es Teilnetzwerke nach Node-Attributen:
+Teilnetzwerke nach Alter:
+1) jung: alle Rapper/innen jünger als 29 Jahre (codiert als 1 und 2 in age)
+2) alt: Alle Rapper/innen älter als 35 Jahre (codiert als 4 und 5 in age)
+
+Teilnetzwerke nach Geschlecht:
+nach Geschlechtern männlich/weiblich
+
+Teilnetzwerke nach Wohnort:
+Hamburg, Berlin, Stuttgart
+
+Teilnetzwerke nach Erfolg (monatliche Hörerzahlen auf Spotify):
+1) eher erfolgreich (codiert als 4 und 5 in fans)
+2) weniger erfolgreich (codiert als 1 und 2 in fans)
+3) wenig erfolgreich und erfolgreich (codiert als 1 und 5 in fans)
+
+Teilnetzwerke nach Nationalität:
+deutsch, nicht-deutsch, deutsch-türkisch
+
+Teilnetzwerke nach Kriminalität:
+1) Rapper/innen mit Gefängnisstrafe (codiert als 5 in criminality)
+2) Rapper/innen mit Bewährung (codiert als 4 in criminality)
+3) Rapper/innen mit einer Verurteilung (codiert als 3 in criminality)
+4) Rapper/innen ohne Polizeikontakt (codiert als 1 in criminality)
+
+
+### Teilnetzwerke nach Beziehungsart (Edge-Attribute)
+
+Das Netzwerk besteht aus drei Beziehungsarten: Feature (zukünftig Teilnetzwerk features), zwischenmenschliche Beziehung (zukünftig Teilnetzwerk relation) und Musiklabel (zukünftig Teilnetzwerk musiclabels). Die Teilnetzwerke feature und relation sind nach unterschiedlichen Beziehungsarten unterteilt.
+
+*Generelle Teilnetzwerke*
+
+- musiclabels (gleiches Musiklabel)
+- rap_rel1 (neutrale Beziehung)
+- rap_rel2 (positive Beziehung) 
+- rap_rel3 (Feindschaft)
+- rap_rel4 (Verwandschaft)
+
+```{r Teilnetzwerke erstellen und vereinfachen, message=FALSE, warning=FALSE, paged.print=FALSE, fig.height=15, fig.width=18}
+library("igraph")
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+list.edge.attributes(d)
+
+#Teilnetzwerk im gleichen Musiklabel
+musiclabels <- subgraph.edges(d, E(d)[musiclabel==1]) 
+
+musiclabels
+
+plot(musiclabels,
+		 layout=layout_with_kk,
+		 asp=0,
+		 vertex.size=10,
+		 main="Rapper*innen im gleichen Musiklabel")
+
+```
+
+Das Netzwerk hat noch 115 Kanten, also gibt es 115 Rapper*innen, die im gleichen Label sind.
+
+*Teilnetzwerk Beziehung im Vergleich*
+
+```{r Teilnetzwerke Beziehung, fig.height=15, fig.width=12}
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#Um das Ganze etwas übersichtlicher zu machen, erstellen wir nun 4 Teilnetzwerke. Jedes Teilnetzwerk visualisiert eine Beziehungsform (Edge-Attribut "relationship" 1-4).
+
+rap_rel1 <- subgraph.edges(d, E(d)[relationship=="1"])
+rap_rel1 
+
+rap_rel2 <- subgraph.edges(d, E(d)[relationship=="2"])
+rap_rel2 	
+
+
+rap_rel3 <- subgraph.edges(d, E(d)[relationship=="3"])
+rap_rel3 	
+
+rap_rel4 <- subgraph.edges(d, E(d)[relationship=="4"])
+rap_rel4
+
+#Um die Geschlechter der Akteure auf einen Blick sichtbar zu machen, wird den weiblichen Akteuren in den einzelnen Teilnetzwerken die Knotenform "Quadrat" und den Männern die Knotenform "Kreis" zugeordnet. 
+
+V(rap_rel1)[V(rap_rel1)$sex == 2]$shape <- "square" 
+V(rap_rel1)[V(rap_rel1)$sex == 1]$shape <- "circle"
+V(rap_rel2)[V(rap_rel2)$sex == 2]$shape <- "square" 
+V(rap_rel2)[V(rap_rel2)$sex == 1]$shape <- "circle"
+V(rap_rel3)[V(rap_rel3)$sex == 2]$shape <- "square" 
+V(rap_rel3)[V(rap_rel3)$sex == 1]$shape <- "circle"
+V(rap_rel4)[V(rap_rel4)$sex == 2]$shape <- "square" 
+V(rap_rel4)[V(rap_rel4)$sex == 1]$shape <- "circle"
+
+#Die Teilnetzwerke können nun visualisiert werden. 
+
+plot(rap_rel1,
+     asp=0,
+     layout=layout_nicely,
+     vertex.frame.color="black",
+     edge.color="black",
+     vertex.label.color="black",
+     vertex.color="lightgrey",
+     main="Teilnetzwerk neutrales Verhältnis")
+	
+plot(rap_rel2,
+     layout=layout_nicely,
+     asp=0, 
+     edge.color="black",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.color="lightgreen",
+     main="Teilnetzwerk positives Verhältnis")
+
+plot(rap_rel3,
+     layout=layout_nicely,
+     asp=0,
+     edge.color="black",
+     vertex.frame.color="black",
+     vertex.color="indianred1",
+     vertex.label.color="black",
+     main="Teilnetzwerk negatives Verhältnis")
+
+plot(rap_rel4,
+     layout=layout_nicely,
+     asp=0,
+     edge.color="black",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.color="royalblue1",
+     main="Teilnetzwerk Verwandschaft")
+
+par(mfrow=c(1,1), mar=c(0,0,0,0)) 
+
+```
+
+Die entstandenen Teilnetzwerke geben eine gute Übersicht über das zwischenmenschliche Verhältnis der Akteure zueinander. Die Netzwerke der Edge-Attribute "relationship"=1 und "relationship"=2 haben hier offensichtlich die meisten Knoten und sind am dichtesten vernetzt. Das Teilnetzwerk der neutralen Beziehungen hat eine und das der positiven Beziehungen zwei Komponenten. Die letzten beiden Netzwerke sind wesentlich übersichtlicher. Das Teilnetzwerk "relationship"=3 hat zwei Komponenten und insgesamt nur 8 Knoten, während das Teilnetzwerk "relationship"=4 lediglich 2 Knoten beinhaltet. Daraus lässt sich schließen, dass ein Großteil der deutschen Rapper*innen aktuell (Stand: Sommer 2021) ein positives oder zumindest neutrales Verhältnis zueinander hat. Interessant ist auch, dass das Teilnetzwerk der negativen Beziehungen/Feindschaft nur männliche Rapper beinhaltet. Innerhalb der von uns betrachteten Akteure scheinen sich die Frauen bei Konflikten dementsprechend zu enthalten.
+
+### Teilnetzwerke nach Node-Attributen
+Für die Analyse von Teilnetzwerken haben wir nach folgenden Node-Attributen selektiert:
+
+- Geschlecht
+- Wohnort
+- Erfolg (monatliche Hörerzahlen auf Spotify)
+- Alter
+- Nationalität
+- Kriminalität
+
+*Teilnetzwerk Geschlecht*
+
+```{r Gesamtnetzwerk männlich/weiblich, fig.height=15, fig.width=15}
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#Wir wollen uns zunächst einmal ansehen, wie die Geschlechterverteilung in unserem Gesamtnetzwerk aussieht. Dazu färben wir die weiblichen Knoten rosa und die männlichen Knoten blau. 
+
+V(d)[V(d)$sex == 1]$color <- "lightblue" 
+V(d)[V(d)$sex == 2]$color <- "pink"
+
+#Anschließend visualisieren wir unser Netzwerk. 
+
+plot(d,
+     asp=0,
+     layout=layout_with_kk,
+     edge.color="black",
+     edge.arrow.size=0,
+     vertex.size=10,
+     vertex.label.cex=1,
+     vertex.label.color="black",
+     label.frame.color="black",
+     main ="Gesamtnetzwerk weiblich/männlich")
+
+```
+
+Es lässt sich hier erkennen, dass die weiblichen Rapperinnen im Netzwerk nur eine Minderheit ausmachen. Sie bewegen sich darüber hinaus eher am äußeren Ende des Netzwerks, wodurch ersichtlich wird, das sie im Allgemeinen weniger gut vernetzt sind als ihre männlichen Kollegen. 
+
+```{r Teilnetzwerk weiblich, fig.height=10, fig.width=10}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#Wir möchten uns nun die Vernetzung der einzelnen Geschlechter genauer ansehen. Dazu erstellen wir jeweils ein Teilnetzwerk. 
+
+list.vertex.attributes(d)
+vertex_attr(d)$sex
+
+#Neues Netzwerk mit weiblichen Aktueren wird erstellt
+rap_f <- delete_vertices(d, V(d)[sex!= "2"]) 
+rap_f
+
+#Anschließend visualisieren wir unser Teilnetzwerk. 
+
+plot(rap_f, layout=layout_nicely,
+     main="Weibliche Akteure im Deutschrap",
+     edge.color="black",
+     edge.arrow.size=0,
+     vertex.color="pink",
+     vetex.size=20,
+     vertex.label.cex=1.5,
+     vertex.label.color="black",
+     vertex.frame.color="black")
+
+```
+
+Unser Teilnetzwerk ist sehr übersichtlich, da es nur insgesamt 10 weibliche Knoten gibt. Das Netzwerk besteht hier, anders als das Gesamtnetzwerk aus 2 Komponenten. In der Hauptkomponente sind alle Knoten außer Paula Douglas mit mindestens zwei weiteren Knoten vernetzt. Die Rapperin Shirin David hat innerhalb der weiblichen Akteure die meisten Beziehungen. Sie ist mit 4 anderen Knoten vernetzt. Es ist allerdings anzumerken, dass in diesem Netzwerk noch nicht ersichtlich wird, ob die Verbindung durch gemeinsames featuren oder durch die Labelzugehörigkeit entstanden ist.
+
+```{r Teilnetzwerk männlich, fig.height=20, fig.width=15}
+
+#Nun wiederholen wir denselben Vorgang mit den männlichen Akteuren, um auch hier ein Teilnetzwerk zu erstellen. 
+
+rap_m <- delete_vertices(d, V(d)[sex!= "1"]) 
+rap_m
+
+plot(rap_m, layout=layout_nicely,
+     main="Männliche Akteure im Deutschrap",
+     edge.color="royalblue1",
+     edge.arrow.size=0,
+     vertex.label.cex=1.5,
+     vertex.label.color="black",
+     vertex.color="lightblue",
+     vetex.size=13,
+     vertex.frame.color="black")
+
+```
+
+Wie wir sehen können, hat das erstellte Teilnetzwerk im Gegensatz zu dem weiblichen Teilnetzwerk nur eine Komponente und ist äußerst dicht vernetzt, was deutlich macht, wie intensiv die männlichen Rapper untereinander featuren. Bis auf die Akteure Pashanim und Frauenarzt steht jeder Knoten mit mindestens 2 weiteren Knoten in Verbindung. Auch hier ist allerdings noch nicht ersichtlich, ob die Verbindug sich auf das Edge-Attribut "feature" oder auf das Attribut "musiclabel" bezieht.
+
+```{r Beziehungsnetzwerk Gesamt, fig.height=25, fig.width=30}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#Nun wollen wir uns das Edge-Attribut "relationship" genauer ansehen. Dazu erstellen wir zunächst ein Teilnetzwerk, indem die verschiedenen Beziehungsformen/-stärken durch verschiedene Farben und Kantenbreiten visualisiert werden (neutral = grau, positiv = grün, negativ = rot, verwandt = blau. Die Regel ist hierbei: Je breiter die Kanten, desto stärker die Beziehung. 
+
+E(d)[E(d)$relationship == "1"]$color <- "grey"
+E(d)[E(d)$relationship == "2"]$color <- "seagreen"
+E(d)[E(d)$relationship == "3"]$color <- "red3"
+E(d)[E(d)$relationship == "4"]$color <- "royalblue1"
+E(d)[E(d)$relationship == "1"]$width <- 2
+E(d)[E(d)$relationship == "2"]$width <- 3
+E(d)[E(d)$relationship == "3"]$width <- 4
+E(d)[E(d)$relationship == "4"]$width <- 5 
+
+#Die verschiedenen Geschlechter werden hier wieder durch verschiedene Knotenfarben gekennzeichnet. 
+
+V(d)[V(d)$sex == 1]$color <- "lightblue" 
+V(d)[V(d)$sex == 2]$color <- "pink"
+
+plot(d, layout=layout_nicely,
+     main="Beziehungen aller deutschen Rapper",
+     sub="Unterteilung männlich/weiblich, Beziehungsstärke durch Kantenbreite/-farbe visualisiert",
+     edge.arrow.size=0,
+     vertex.label.cex=2,
+     vertex.label.color="black",
+     vetex.size=1,
+     vertex.frame.color="black")
+
+```
+
+Das entstandene Netzwerk ist identisch zum Gesamtnetzwerk strukturiert und hat daher nur eine Komponente. Es lässt sich hier allerdings erkennen, dass die meisten Beziehungen der Rapper*innen untereinander neutraler oder positiver Natur sind. Feind- oder Verwandschaft macht nur einen kleinen Teil der Kanten aus. 
+
+*Teilnetzwerk nach Alter*
+
+```{r Teilnetzwerk nach Alter, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+#Teilnetzwerke Alter
+list.vertex.attributes(d)
+vertex_attr(d)$age
+alt <- delete_vertices(d, V(d)[age < "4"]) 
+alt
+
+jung <- delete_vertices(d, V(d)[age > "2"]) 
+jung
+
+# Visualisierung
+plot(jung, layout=layout_with_kk,
+     main="Beziehungen junger Rapper*innen")
+
+plot(alt, layout=layout_with_kk,
+     main="Beziehungen älterer Rapper*innen")
+```
+
+Das Netzerk der älteren Rapper*innen besteht aus 18 Knoten und 54 Kanten, wohingegen das Teilnetzwerk der jüngeren Rapper_innen aus 28 Knoten und 59 Kanten besteht. Somit featuren jüngere Rapper_innen eher untereinander als ältere.
+
+*Teilnetzwerk Wohnort*
+```{r Teilnetzwerke erstellen nach Wohnort, message=FALSE, warning=FALSE, paged.print=FALSE, fig.height=10, fig.width=10}
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+# Teilnetzwerk Wohnort 1: Hamburg selektieren
+list.vertex.attributes(d)
+V(d)[home!="Hamburg"]
+h_hamburg <- delete.vertices(d, V(d)[home!="Hamburg"])
+h_hamburg
+
+# Visualisierung von Teilnetzwerk Wohnort 1
+plot(h_hamburg, 
+     layout=layout_with_kk, 
+     main="Teilnetzwerk Hamburg",
+     sub="Rapper*innen aus Hamburg")
+
+# Teilnetzwerk Wohnort 2: Berlin selektieren
+list.vertex.attributes(d)
+V(d)[home!="Berlin"]
+h_berlin <- delete.vertices(d, V(d)[home!="Berlin"])
+h_berlin
+
+# Visualisierung von Wohnort 2
+plot(h_berlin, 
+     layout=layout_with_kk, 
+     main="Teilnetzwerk Berlin",
+     sub="Rapper*innen aus Berlin")
+
+# Teilnetzwerk Wohnort 3: Stuttgart selektiert
+list.vertex.attributes(d)
+V(d)[home!="Stuttgart"]
+h_stuttgart <- delete.vertices(d, V(d)[home!="Stuttgart"])
+h_stuttgart
+
+# Visualisierung von Wohnort 3
+plot(h_stuttgart, 
+     layout=layout_with_kk, 
+     main="Teilnetzwerk Stuttgart",
+     sub="Rapper*innen aus Stuttgart")
+```
+
+Gerade in Berlin, wohnen viele Akteure der Deutschrap-Szene. Man kann erkennen, dass gerade in dieser Stadt besonders viele Beziehungen zwischen den Rapper*innen vorliegen. Es lässt sich hier jedoch nicht erkennen, ob die Akteure nur über ihre Labels verbunden sind, oder ob tatsächlich ein Feature vorliegt. Trotzdem lässt sich hier eine gewisse Homophilie erkennen.
+
+*Teilnetzwerk Erfolg*
+
+```{r Teilnetzwerke Erfolg, message=FALSE, warning=FALSE, paged.print=TRUE, fig.height=10, fig.width=10}
+
+# Featuren erfolgreiche Rapper*innen eher mit anderen erfolgreichen oder weniger erfolgreichen Rapper*innen?
+
+# Teilnetzwerk 1: Rapper*innen mit sehr geringem Erfolg (fans=1) und mit geringem Erfolg (fans=2)
+list.vertex.attributes(d)
+V(d)[fans!=1]
+V(d)[fans!=2]
+f_1 <- delete.vertices(d, V(d)[fans!=1][fans!=2])
+f_1
+
+# Visualisierung von Teilnetzwerk 1
+plot(f_1, 
+     layout=layout_with_kk, 
+     main="Verbindungen zwischen Rapper*innen mit geringem Erfolg")
+
+# Teilnetzwerk 2: Rapper*innen mit sehr großem Erfolg (fans=5) und mit großem Erfolg (fans=4)
+list.vertex.attributes(d)
+V(d)[fans!=5]
+V(d)[fans!=4]
+f_2 <- delete.vertices(d, V(d)[fans!=5][fans!=4])
+f_2
+
+# Visualisierung von Teilnetzwerk 3
+plot(f_2, 
+     layout=layout_with_kk, 
+     main="Verbindungen zwischen Rapper*innen mit großem Erfolg")
+
+# Teilnetzwerk 3: Rapper*innen mit sehr großem Erfolg (fans=5) und mit wenig Erfolg (fans=1)
+list.vertex.attributes(d)
+V(d)[fans!=5]
+V(d)[fans!=1]
+f_3 <- delete.vertices(d, V(d)[fans!=5][fans!=1])
+f_3
+
+# Visualisierung von Teilnetzwerk 4
+plot(f_3, 
+     layout=layout_with_kk, 
+     main="Verbindungen zwischen Rapper*innen mit sehr großem Erfolg und Rapper*innen mit wenig Erfolg")
+
+edge_density(f_1, loops=FALSE)
+edge_density(f_2, loops=FALSE)
+edge_density(f_3, loops=FALSE)
+
+```
+
+Das Teilnetzwerk geringer Erfolg hat 11% aller Verbindungen realisiert, im Teilnetzwerk großer Erfolg wurden 43% aller möglichen Verbindungen realisiert und im Teilnetzwerk geringer und großer Erfolg wurden 30,5% der Verbindungen realisiert. Somit lässt sich feststellen, dass vor allem erfolreiche Akteure untereinander featuren. Aber auch weniger erfolgreiche Künstler*innen nutzen die Möglichkeit, um mit erfolgreicheren Akteuren zu featuren und so ihre Bekanntheit zu steigern. Deshalb featuren weniger erfolgreiche Akteure auch nicht so viel untereinander.
+
+*Teilnetzwerk nach Kriminalität*
+
+```{r Teilnetzwerk nach Kriminalität, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+list.vertex.attributes(d)
+vertex_attr(d)$criminality
+
+# Featuren Rapper*innen, die schon im Gefängnis waren eher miteinander, als weniger kriminelle Rapper*innen?
+
+#Rapper*innen mit Gefägnisstrafe
+d_crimi <- delete_vertices(d, V(d)[criminality != "5"]) 
+d_crimi
+plot(d_crimi, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Vernetzung zwischen krimininellen Rapper*innen",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Gefägnisstrafe")
+
+d_crimi3 <- delete_vertices(d, V(d)[criminality != "3"]) 
+d_crimi3
+plot(d_crimi3, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Vernetzung zwischen kriminelle Rapper*innen",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Verurteilung")
+
+d_crimi2 <- delete_vertices(d, V(d)[criminality != "4"]) 
+d_crimi2
+plot(d_crimi2, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Vernetzung zwischen kriminelle Rapper*innen",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Strafe auf Bewährung")
+
+
+#Rapper*innen, die nicht kriminell sind
+d_crimi4 <- delete_vertices(d, V(d)[criminality != "1"]) 
+d_crimi4
+plot(d_crimi4, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Vernetzung zwischen nicht-kriminellen Rapper*innen",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="keine Auffälligkeiten")
+
+```
+
+Bei den Rappern, die im Gefängnis saßen, ist eine sehr deutliche Spaltung zu erkennen. Man kann bereits eine Gruppierung mit Rappern feststellen, die mehr miteinander verbunden sind. Das mag daran liegen, dass einige dieser Rapper unter demselben Label arbeiten. Beispiel: AK Ausserkontrolle und LX, beide gehören zum Musiklabel "Auf! Keinen! Fall!". Bei den verurteilten Rappern gibt es nicht mehrere Gruppen, sondern nur eine. Anscheinend haben diese Rapper oft miteinander zu tun bzw. Sie arbeiten zusammen. Tatsächlich kann man auch hier eine Verbindung zwischen Rappern desselben Musiklabels erkennen. Beispiel Nimo und Olexesh, beide sind Teil von "385ideal". Weniger zufriedenstellend ist das dritte Netzwerk, das die Bewährungsstrafe zeigt. Hier gibt es nur einen einzelnen Knoten, nämlich der Rapper Maxwell.
+
+*Teilnetzwerk nach Nationalitäten*
+
+```{r Teilnetzwerk nach Natonalität, exercise=TRUE, exercise.lines=TRUE, fig.height=8, fig.width=8}
+
+library(igraph)
+el <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+list.vertex.attributes(d)
+vertex_attr(d)$nationality
+
+#Featuren sich Rapper*innen mit gleicher Nationalität eher untereinander?
+
+#Rapper*innen mit deutsch-türkischer Nationalität
+d_nat <- delete_vertices(d, V(d)[nationality != "deutsch-tuerkisch"]) 
+d_nat
+plot(d_nat, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Rapper*innen mit derselben Nationalität",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Deutsch-Türkisch")
+
+#Rapper*innen mit nicht-deutscher Nationalität
+d_nat2 <- delete_vertices(d, V(d)[nationality == "deutsch"]) 
+d_nat2
+plot(d_nat2, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Rapper*innen mit einer anderen Nationalität",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Nicht Deutsch")
+
+#Rapper*innen mit deutscher Nationalität
+d_nat3 <- delete_vertices(d, V(d)[nationality != "deutsch"]) 
+d_nat3
+plot(d_nat3, 
+		 asp=0,
+		 layout=layout_with_kk,
+     main="Rapper*innen mit derselben Nationalität",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.color="gold",
+		 vertex.size=8,
+		 vertex.frame.color=NA,
+     sub="Nur Deutsch")
+
+```
+
+Viele Rapper, sowohl männliche als auch weibliche, sind ausländischer Herkunft. Aus diesem Grund haben wir uns entschieden zu analysieren, wie deutsche und nichtdeutsche Rapper miteinander verbunden sind. Mit Hilfe von drei Teilnetzwerken visualisierten wir zuerst die Rapper mit türkisch-deutscher Herkunft, dann die einzigen deutschen und schließlich die nicht-deutschen Rapper (also alle anderen Nationalitäten). Dabei ist herausgekommen, dass eine Vernetzung zwischen Rappern gleicher Herkunft viel häufiger und wahrscheinlicher ist. Hier sprechen wir über den Homophilie-Effekt.Es bezieht sich darauf, dass sich oftmals Freundschaften zwischen Personen mit ähnlicher kultureller Prägung bilden. Ein Beispiel ist das dritte Teilnetzwerk, dass nur deutsche Rapper vertritt. Hier sieht man eine gut definierte Gruppierung.
+
+*Kombination von Node-Attributen*
+
+In diesem Beispiel werden die Node-Attribute Geschlecht und Nationalität kombiniert. Die Auswahl der jeweiligen Kategorien folgt dabei dem Forschungsziel.
+
+```{r Kombination Geschlecht und Nationalität}
+list.vertex.attributes(d)
+
+# Zunächst werden alle Werte gelöscht, die nicht männlich sind (eins ist als männlich codiert, also logischer Operator wird > verwendet, d.h. es werden alle weiblichen Knoten gelöscht)
+d_male <- delete_vertices(d, V(d)[sex >"1"]) 
+d_male
+
+# Dann werden die Rapper mit dem Wert fans <5 (weil 5 meiste Fans codiert ist) aus dem Netzwerk d_amle gelöscht (in dem nur Männer sind.)
+d_male_de <- delete_vertices(d_male, V(d_male)[nationality!="deutsch"]) 
+d_male_de  
+
+# Der plot verwendet nur wenig Anpassungen.
+plot(d_male_de, 
+     layout=layout_with_kk,
+     main="Netzwerk der Rapper mit deutscher Nationalität",
+     edge.color="grey80",
+     edge.arrow.size=.3,
+     vertex.label.color="grey30",
+     vertex.color="light blue",
+     vertex.frame.color=NA,
+     sub="n=13, 15 Kanten, alle Beziehungsarten")
+```
+
+### Kombination von Edge- und Nodeattributen
+Teilnetzwerke lassen sich auch aus einer Kombination von Edge- und Node-Attributen erstellen. Dazu werden die oben genannten Schritte kombiniert. Im Folgenden wird das Edge-Attribut Musiklabel mit den Node-Attributen Geschlecht und gleiches Alter kombiniert.
+
+*Teilnetzwerk gleiches Musiklabel, gleiches Alter*
+
+```{r Teilnetzwerk Frauen und Hilfsnetzwerk im Altervergleich, fig.with=30}
+library(igraph)
+el <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+# Teilnetzwerk gleiches Musiklabel generieren
+musiclabels <- subgraph.edges(d, E(d)[musiclabel==1])
+
+# Männer herausfiltern
+vertex_attr(musiclabels)$sex
+labels_male <- delete_vertices(musiclabels, V(musiclabels)[sex != "1"]) 
+labels_male
+
+# Altersstruktur anzeigen
+vertex.attributes(labels_male)$age
+# Hier bietet es sich an, das Netzwerk in zwei Teilnetzwerke zu unterteilen, damit das Netzwerk nicht zu unübersichtlich wird.
+
+labels_male_jung <- delete_vertices(labels_male, V(labels_male)[age>"2"]) 
+labels_male_alt <- delete_vertices(labels_male, V(labels_male)[age<"4"]) 
+
+labels_male_jung
+labels_male_alt
+
+# Visualisierung im Vergleich
+par(mfrow=c(1,2), mar=c(0,0,4,0)) # definiert, dass 3 plots in einer Zeile stehen
+
+plot(labels_male_jung, layout=layout_with_kk,
+     edge.arrow.size=.4,
+     edge.color="skyblue",
+     vertex.color="skyblue",
+     vertex.frame.color=NA,
+     vertex.label.color="black",
+     main="junge Rapper, gleiches Musiklabel")
+
+plot(labels_male_alt, layout=layout_with_kk,
+     edge.arrow.size=.4,
+     edge.color="blue",
+     vertex.color="blue",
+     vertex.frame.color=NA,
+     vertex.label.color="black",
+     main="ältere Rapper, gleiches Musiklabel")
+
+par(mfrow=c(1,1), mar=c(0,0,4,0))
+
+```
+
+Interpretation: Bei den jüngeren Rappern, gibt es weniger Kanten als bei den älteren Rappern, somit auch weniger Features. Wenn ältere Rapper in einem Musiklabel sind, ist die Wahrscheinlichkeit somit höher, dass sie untereinander featuren, als bei jüngeren.
+
+## Teilnetzwerke: Componenten, Cluster und Cliquen
+Die Analyse hat Teilnetzwerke nach spezifischen Kriterien generiert. Jedes Netzwerk verfügt aber auch über spezielle Eigenarten, wenn sich Knoten nach bestimmten Kriterien zusammenfinden. 
+
+Auf der Ebene des Netzwerks sind die Komponenten: Wenn keine isolierten Knoten existieren und alle Knoten in einem Hauptnetzwerk verbunden sind, dann liegt ein Netzwerk mit einer Komponente vor. Die Prüfung erfolgt mit dem Befehl is_connected(g). Achtung: manche Berechnungen von Netzwerkmaßen sind nur bei Netzwerken möglich, die aus einer Komponente bestehen. 
+
+
+### Komponenten
+
+__Komponenten analysieren__
+
+```{r Komponentenanalyse, fig.height=15, fig.width=20}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+count_components(d)
+```
+
+Da unser Gesamtnetzwerk nur eine Komponente hat, müssen hier wir keine weitere Analyse (z.B. der starken/schwachen Komponenten) vornehmen.
+
+### Cluster
+
+Innerhalb von Komponenten lassen sich verschiedne Teilcluster berechnen. Wir verwenden dafür die Hauptkomponente und berechnen Cluster innerhalb der Komponente. Der *cluster_walktrap(g)* Befehl berechnet die Cluster anhand der kürzesten Pfade und einem statistischen Vergleich zwischen den Clustern. Der Vorteil dieser Methode ist, dass die Ausgabe des Plots die Cluster gleich farbig zuteilt (diese Zuweisung ist beliebig und kann nicht verändert werden). Für die Berechnung werden Teilbeziehungen der Unternetzwerke zueinander in Verhältnis gesetzt, die Visualisierung verbindet diese wieder in einer Gesamtdarstellung. 
+
+```{r Clusteranalyse Gesamtnetzwerk, fig.height=15, fig.width=10}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#In diesem Schritt wollen wir eine Clusteranalyse des Gesamtnetzwerks vornehmen und wenden dazu die Walktrapmethode an. 
+
+?cluster_walktrap
+d
+
+clusterd <- cluster_walktrap(d)
+
+#Anschließend berechnen wir Modularität und die entsprechenden Teilgruppen.
+
+modularity(clusterd)
+membership(clusterd)
+
+#Nun visualisieren wir die Clusteranalyse des Gesamtnetzwerks. 
+
+par(mfrow=c(1,1), mar=c(0,0,1,2))
+
+plot(clusterd, 
+     d, 
+     vertex.label.color="black",
+     edge.arrow.size=.2, 
+     main="Clusteranalyse Walktrap-Methode")
+
+```
+
+Wir können hier ablesen, dass es in unserem Gesamtnetzwerk insgesamt 11 Cluster gibt. Davon beeinhalten 4 Cluster nur einen einzigen Knoten. Das größte Cluster besteht aus 21 Knoten und beeinhaltet auch den am besten vernetzten Akteur "Capital Bra". Die übrigen Cluster sind deutlich kleiner und beeinhalten 2-12 Knoten. Daraus lässt sich schließen, dass es innerhalb der deutschen Rapper/innen durchaus einzelne Gruppen gibt, die sehr gut untereinander vernetzt sind, während andere Akteure eher außenstehend sind. Es fällt außerdem auf, dass die wenig vernetzten Rapper/innen im Allgemeinen eher weniger bekannt/erfolgreich sind als die Rapper*innen, die mehr Beziehungen haben.
+
+*Merke*: Netzwerke können in Teilnetzwerke und Communities zerlegt werden. Die Tiefe der Analyse ist abhängig von der Forschungsfrage.
+
+Da in der Clusteranalyse des Gesamtnetzwerks noch nicht ablesbar ist, durch welches Edge-Attribut die Beziehungen zustande gekommen sind, wollen wir nun die Cluster der Rapper*innen analysieren, die bereits miteinander gefeatured/kollaboriert haben. Dafür nutzen wir ein Teilnetzwerk.
+
+```{r Clusteranalyse Features, fig.height=15, fig.width=15}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+#Da in der Clusteranalyse des Gesamtnetzwerks noch nicht ablesbar ist, durch welches Edge-Attribut die Beziehungen zustande gekommen sind, wollen wir nun die Cluster der Rapper*innen analysieren, die bereits miteinander gefeatured/kollaboriert haben. Zu diesem Zweck erstellen wir zunächst ein Teilnetzwerk. Da wir alle Arten von Kollaborationen mit den Nummern 1-4 und "keine Features" mit NA (=99) codiert haben, können wir hierfür den folgenden Befehl nutzen:
+
+featurecluster <- subgraph.edges(d, E(d)[feature <= 4]) 
+
+#Nun wird erneut die Walktrapmethode angewendet und das Netzwerk visualisiert. 
+
+?cluster_walktrap
+featurecluster
+
+featurecluster2 <- cluster_walktrap(featurecluster)
+modularity(featurecluster2)
+membership(featurecluster2)
+
+par(mfrow=c(1,1), mar=c(0,0,1,2))
+
+plot(featurecluster2, 
+     featurecluster,
+     vertex.label.color="black",
+     vertex.size=10,
+     edge.arrow.size=.2, 
+     main="Clusteranalyse Features")
+
+```
+
+Unser Teilnetzwerk hat insgesamt 10 Cluster. Abgesehen von 5 Clustern mit einem und einem Cluster mit 2 Knoten gibt es 4 größere Cluster. Das größte Cluster beinhaltet 23, die restlichen 6-12 Knoten. Es lässt sich hieraus ablesen, dass ein Großteil der Akteure bereits mehrmals mit anderen Kolleg/innen gefeatured oder sogar ein Album herausgebracht oder auf Tour gegangen ist. Hier lassen sich auch die außenstehenden Rapper/innen mit nur einer Kollaboration, sowie Rap-Gruppen wie die 187 Straßenbande (bestehend aus Bonez MC, Gzuz, Maxwell, LX und Sa4) erkennen, die einerseits viel untereinander aber auch regelmäßig mit anderen Akteuren featuren. Da das Netzwerk aus insgesamt 57 Knoten besteht, können wir davon ausgehen, dass 3 der Rapper/innen tatsächlich mit keinem anderen Akteur kollaboriert haben. Zwar ist eindeutig, dass die erfolgreicheren Rapper/innen im Regelfall mehr mit anderne Akteuren featuren - da wir in unserer Analyse allerdings ausschließlich erfolgreiche bzw. bekannte Rapper/innen betrachtet haben, können wir schlussfolgern, dass Features äußerst hilfreich aber nicht zwangsläufig notwendig sind, um im Deutschrap erfolgreich zu werden. 
+
+Zuletzt möchten wir eine Clusteranalyse der Rapper*innen durchführen, die zum selben Label gehören oder gehört haben. Wir erstellen also erneut ein Teilnetzwerk und wiederholen die vorherigen Schritte.
+
+```{r Clusteranalyse Labels, fig.height=15, fig.width=15}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+labelcluster <- subgraph.edges(d, E(d)[musiclabel == 1]) 
+
+?cluster_walktrap
+labelcluster
+
+labelcluster2 <- cluster_walktrap(labelcluster)
+modularity(labelcluster2)
+membership(labelcluster2)
+
+par(mfrow=c(1,1), mar=c(0,0,1,2))
+
+plot(labelcluster2, 
+     labelcluster,
+     vertex.label.color="black",
+     vertex.size=10,
+     edge.arrow.size=.2, 
+     main="Clusteranalyse Labels")
+
+```
+
+Das hier entstandene Teilnetzwerk hat 2 Komponenten und insgesamt 9 Cluster. Es lässt sich hier klar erkennen, dass es in Deutschland ein Netzwerk aus Musiklabeln gibt, die im Normalfall mehrere erfolgreiche Rapper/innen unter Vertrag haben oder hatten. Die 6 kleineren Cluster haben 2-6 Knoten, die drei größten 7-16 Knoten. Allerdings besteht das Netzwerk aus nur insgesamt 51 Akteuren, woraus wir schließen können, dass 9 der betrachteten Rapper*innen mit keinem anderen Akteur im selben Label sind oder waren. Labelzugehörigkeit scheint daher ebenfalls hilfreich, für Erfolg aber nicht zwangsläufig notwendig zu sein.
+
+### Communities berechnen
+Für die Berechnung von *communities* werden automatisch nach dichten Untergruppen im Netzwerk gesucht. Die Annahme ist, dass eine hohe Dichte zwischen Knoten für viel Austausch oder Kontakt steht und dies eine Gemeinschaft (community) innerhalb des Netzwerks definiert, die sich von anderen abgrenzen lässt.
+
+```{r Communities erstellen, fig.height=12, fig.width=12}
+# Anzahl der Clusters
+clusters(d)
+
+# Komponenten auftrennen
+d_comp <- decompose.graph(d)
+d_comp
+
+# Komponenten neu benennen
+d_comp1 <- d_comp[[1]]
+
+
+# Berechnung der Cluster innerhalb der Komponente
+# erstellt die Berechnung für die Modularität und deren Teilgruppen
+cl <- cluster_walktrap(d_comp1)
+modularity(cl)
+membership(cl)
+
+# Clusterberechnung
+plot(d_comp1,
+     edge.arrow.size=.3,
+     vertex.color="grey75",
+     vertex.frame.color=NA,
+     main="Komponente 1 (via communities)")
+
+# Berechnung der Cluster innerhalb der Komponente
+
+# Was macht der communities Befehl?
+?communities()
+
+# Wir verwenden die oben erstellte Aufteilung der Cluster
+membership(cl)
+
+# mit dem Befehl sizes wird die Größe der jeweiligen Communities angezeigt
+sizes(cl)
+
+# und communities() liefert eine Zuordnung der jeweiligen Knoten auf die Communities
+communities(cl)
+
+# Achtung: das sind keine igraph-Objekte, sondern nur die Angaben der Knoten. 
+```
+
+Es gibt noch weitere Clustering-Verfahren, die Cluster nach unterschiedlichen Kriterien bilden. Der Algorithmus von cluster_edge_betweeness() geht davon aus, dass sich sich Cluster vor allem an den "Sollbruchstellen" eines Netzwerks trennen lassen. Diese werden über den Wert der Betweenness berechnet, also die Knoten, die in hohem Maße für die Verbindung zu anderen Knoten beitragen. 
+
+```{r Cluster-Betweeness erstellen, fig.height=15, fig.width=15}
+# Clusterberechnung
+plot(d_comp1, vertex.color="grey80", main="Komponente 1")
+
+# Berechnung der Cluster innerhalb der Komponente
+?cluster_edge_betweenness()
+
+# erstellt die Berechnung für die Modularität und deren Teilgruppen
+eb <- cluster_edge_betweenness(d_comp1)
+eb
+
+plot(eb, d_comp1,
+     edge.arrow.size=.2,
+     main="Edge-Betweenness Cluster")
+```
+
+*Vergleich von Walktrap und Edge-Betweenness-Clustern*
+Bei der Analyse von Clustern ist es notwendig zu verstehen, welche Art von Cluster berechnet wird. 
+
+```{r Vergleich Walktrap und Edge-Betweeness, fig.height=20, fig.width=25}
+# Clusterberechnung
+plot(d_comp1, vertex.color="grey80", main="Komponente 1")
+
+# Berechnung Walktrap-Methode
+cl <- cluster_walktrap(d_comp1)
+
+# erstellt die Berechnung für die Modularität und deren Teilgruppen
+eb <- cluster_edge_betweenness(d_comp1)
+eb
+
+# Visualisierung im Vergleich
+
+par(mfrow=c(1,2), mar=c(0,0,2,1)) 
+plot(eb, d_comp1, edge.arrow.size=.2, vertex.size=10, main="Walktrap-Cluster")
+plot(cl, d_comp1, edge.arrow.size=.2, vertex.size=10, main="Edge-Between-Cluster")
+par(mfrow=c(1,1), mar=c(0,0,2,1)) 
+```
+
+### Dyaden und Reziprozität
+Dyaden sind wichtige Bausteine für Netzwerke. Bei gerichteten Netzwerken lässt sich hier das Maß der Reziprozität berechnen.
+
+```{r Dyadenzenus, fig.height=10, fig.width=15, message=FALSE, warning=FALSE, paged.print=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(igraph)
+el <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(el)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+
+# Durchführung des Dyadenzensus
+dyad_census(d)
+
+# Ausgabe der dyadischen Beziehungen nach dem MAN-Schema
+# M = Mutal (reziprok)
+# A = Asymmetrical (einseitig gerichtet)
+# N = Null (keine Beziehung)
+
+reciprocity(d)
+m <- which_mutual(d)
+m
+
+E(d)$reciprocity <- m
+edge.attributes(d)
+
+E(d)$reciprocity  <- as.numeric(E(d)$reciprocity)
+edge.attributes(d)$reciprocity
+plot(d, 
+     asp=0,
+     layout = layout_with_kk, 
+     edge.arrow.mode=2,
+     edge.arror.size=.1,
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     vertex.color=NA,
+     vertex.frame.color=NA,
+     #edge.width=E(d)$weight/5, 
+     edge.color=c("lightblue", "NA")[(E(d)$reciprocity=="0")+1],
+     main="vereinfachtes Gesamtnetzwerk", 
+     sub="Reziproke Beziehungen"
+     )
+
+```
+
+_Reziprozität, Feature Frauen vs. Feature Männer Vergleich Gesamtnetzwerk_
+
+Im nächsten Schritt analysieren wir das Reziprozitätsprinzip, indem wir die Features zwischen weiblichen und männlichen Rappern vergleichen.
+Wir möchten uns nun die Vernetzung der einzelnen Geschlechter genauer ansehen. Dazu erstellen wir jeweils ein Teilnetzwerk.
+
+```{r fig.height=10, fig.width=10}
+knitr::opts_chunk$set(echo = TRUE)
+library("igraph")
+
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+d
+
+list.vertex.attributes(d)
+vertex_attr(d)$sex
+
+#Neues Netzwerk mit weiblichen Aktueren wird erstellt
+rap_f <- delete_vertices(d, V(d)[sex!= "2"]) 
+rap_f
+
+#Anschließend visualisieren wir unser Teilnetzwerk. 
+
+plot(rap_f, layout=layout_nicely,
+     main="Weibliche Akteure im Deutschrap",
+     edge.color="black",
+     edge.arrow.size=0,
+     vertex.color="pink",
+     vetex.size=20,
+     vertex.label.cex=1.5,
+     vertex.label.color="black",
+     vertex.frame.color="black")
+
+#Unser Teilnetzwerk ist hier sehr übersichtlich, da es nur insgesamt 10 weibliche Knoten gibt. Bis auf einen Knoten sind diese untereinander vernetzt. 
+
+```
+
+Nun wiederholen wir denselben Vorgang mit den männlichen Akteuren, um auch hier ein Teilnetzwerk zu erstellen.
+
+```{r fig.height=20, fig.width=15}
+
+rap_m <- delete_vertices(d, V(d)[sex!= "1"]) 
+rap_m
+
+plot(rap_m, layout=layout_nicely,
+     main="Männliche Akteure im Deutschrap",
+     edge.color="black",
+     edge.arrow.size=0,
+     vertex.label.cex=1.5,
+     vertex.label.color="black",
+     vertex.color="lightblue",
+     vetex.size=13,
+     vertex.frame.color="black")
+```
+
+Aus dieser Analyse geht hervor, dass männliche Rapper häufiger miteinander featuren als weibliche Kollegen. Generell geht aus dem Netzwerk hervor, dass Rapperinnen eine Minderheit darstellen. Die Bildung von Sozialbeziehungen erfolgt durch einem  Kommunikationsprozess (Collins 2004: 18, 165). In diesem Prozess bilden sich die Präferenzen hinsichtlich anderer Personen auf der Basis der bisherigen Interaktion heraus. Das führt dazu, dass eine positive Einstellung gegenüber einer anderen Person meistens auch erwidert wird.In einem von männern dominierten Arbeitsfeld wie Rapmusik ist es verständlich und vorhersehbar, dass Rapperinnen tendenziell stärker miteinander verbunden sind.
+
+### Ego-Netzwerke
+Manchmal ist es hilfreich, bestimmte Knoten aus dem Netzwerk zu extrahieren, um diese genauer zu untersuchen. Damit "zoomt" man auf einen Knoten im Netzwerk. Jedes Netzwerk besteht aus Egos (einzelne Knoten) und deren Alteri. Diese Ego-Netzwerke lassen sich auch einzeln analyisieren. Wir verwenden dafür die Befehle ego_size() und make_ego_graph().
+
+Wir schauen uns das Ego-Netzwerks der Knoten mit dem höchsten Degree- und mit dem höchsten Betweeness-Wert im Netzwerk d an. Außerdem interessieren uns noch die Netzwerke des bekanntesten Rappers und der bekanntesten Rapperin. 
+
+__Ego-Netzwerk __
+
+```{r Ego-Netzwerk erstellen, fig.height=12, fig.width=14, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+# Ego-Netzwerk für Knoten mit höchstem Degree-Wert
+
+# selektiert aus dem Netzwerk alle Knoten, die mit Capital Bra über einen Schritt verbunden sind.
+king <- make_ego_graph(d, order = 1, nodes = V(d)$name == "Capital Bra", mode="all")
+
+# Zwischenschrit, damit das igraph-Objekt von king1 hergestellt ist
+king1 <- king[[1]]
+king1
+
+# Visualisierung
+plot(king1,
+     asp=0,
+     layout=layout_nicely,
+     main="Ego-Netzwerk von Knoten mit höchstem Degree-Wert, erster Grad",
+     vertex.color="orange",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.label.cex=1,
+     edge.color="black",
+     edge.curved=.1,
+     edge.curved=curve_multiple(king1),
+     sub="Capital Bra hat den höchsten Degree-Wert")
+
+# Ego-Netzwerk für Knoten mit höchstem Betweeness-Wert
+
+# selektiert aus dem Netzwerk alle Knoten, die mit Bausa über einen Schritt verbunden sind.
+king2 <- make_ego_graph(d, order = 1, nodes = V(d)$name == "Bausa", mode="all")
+
+# Zwischenschrit, damit das igraph-Objekt von king2 hergestellt ist
+king_b <- king2[[1]]
+king_b
+
+# Visualisierung
+plot(king_b,
+     asp=0,
+     layout=layout_nicely,
+     main="Ego-Netzwerk von Knoten mit höchstem Betweeness-Wert, erster Grad",
+     vertex.color="orange",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.label.cex=1,
+     edge.color="black",
+     edge.curved=.1,
+     edge.curved=curve_multiple(king1),
+     sub="Bausa hat den höchsten Betweeness-Wert")
+
+# Ego-Netzwerk für bekanntesten Rapper
+
+# selektiert aus dem Netzwerk alle Knoten, die mit Bonez MC über einen Schritt verbunden sind.
+success <- make_ego_graph(d, order = 1, nodes = V(d)$name == "Bonez MC", mode="all")
+
+success_m <- success[[1]]
+success_m
+
+# Visualisierung
+plot(success_m,
+     asp=0,
+     layout=layout_nicely,
+     main="Ego-Netzwerk Bonez MC, erster Grad",
+     vertex.color="orange",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.label.cex=1,
+     edge.color="black",
+     edge.curved=.1,
+     edge.curved=curve_multiple(king1),
+     sub="nur direkte Beziehungen des ersten Grads")
+
+# Ego-Netzwerk für bekannteste Rapperin
+
+# selektiert aus dem Netzwerk alle Knoten, die mit Shirin David über einen Schritt verbunden sind.
+success <- make_ego_graph(d, order = 1, nodes = V(d)$name == "Shirin David", mode="all")
+
+success_w <- success[[1]]
+success_w
+
+# Visualisierung
+plot(success_w,
+     asp=0,
+     layout=layout_nicely,
+     main="Ego-Netzwerk Shirin David, erster Grad",
+     vertex.color="orange",
+     vertex.frame.color="black",
+     vertex.label.color="black",
+     vertex.label.cex=1,
+     edge.color="black",
+     edge.curved=.1,
+     edge.curved=curve_multiple(king1),
+     sub="nur direkte Beziehungen des ersten Grads")
+
+```
+
+Zu sehen ist, dass der bekannteste Rapper (Bonez MC) weitaus mehr Verbindung hat, als die bekannteste Rapperin (Shirin David). Daraus könnte man schließen, dass männliche Rapper mehr featuren, als weibliche. Außerdem ist zu sehen, dass Bonez MC nur mit anderen männlichen Rappern in Verbindung steht, während Shirin David sowohl mit männlichen, als auch mit weiblichen verbunden ist (genauer gesagt mit vier weiblichen und drei männlichen).
+
+__Egonetzwerk zweiter (und dritter) Ordnung__
+
+Ego-Netzwerke lassen sich leicht um die zweite oder dritte Ordnung erweitern. In unserem Fall haben sich aber keine Änderungen zu den Ego-Netzwerken erster Ordnung ergeben, weshalb dieser Part in unserer Analyse nicht vorkommt.
+
+## Zentralitätsmaße
+Je nach Auswahl des Netzwerks unterscheiden sich die Analyseergebnisse stark. Deshalb ist es notwendig zunächst zu klären, welche Netzwerke untersucht werden sollen. 
+
+### Degree
+
+```{r Degree, fig.height=10, fig.width=15, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(igraph)
+el <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(el)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+E(d)$arrow.size <- .2 
+
+# Einfache Berechnung des Degree als Gesamtwert
+ds <- degree(d)
+ds
+which.max(ds)
+
+```
+
+Capital Bra ist der Rapper mit dem höchsten Degree-Wert von 27.
+
+Die absoluten Zahlen sind allerdings nur begrenzt aussagekräftig: Deshalb lässt sich der Degree-Wert leicht normalisieren, d.h. als Prozentwert darstellen. Deshalb werden wir folgend nur noch mit den prozentualen Werten arbeiten. Diese Methode nennt sich Normalisierung und berechnet den Degree-Wert eines Knotens im Verhältnis zu allen anderen Knoten. Damit erreicht man eine genauere Aussage als mit einem reinen numerischen Wert. Dafür wird der Befehl um das Argument normalized = TRUE ergänzt.
+
+```{r Zentralität: Degree-Werte zentralisiert}
+
+#Knoten mit den stärksten Beziehungen im Gesamtnetzwerk
+degree(d, mode="all", normalized = TRUE)
+which.max(degree(d, mode="all"))
+
+```
+Capital Bra ist der Rapper mit den stärksten Beziehungen mit einem Degree-Wert von 45,8%.
+
+__Indegree als Popularitätsmaß__
+
+Das Zentralitätsmaß Indegree wird häufig als Popularitätsmaß interpretiert. 
+
+```{r Zentralität: Indegree als Popularitätsmaß}
+
+# Gesamtnetzwerk
+# zeigt die normalisierte Indegree-Verteilung im Gesamtnetzwerk
+degree(d, mode="in", normalized = TRUE)
+# liefert den Knoten mit der höchsten Anzahl von starken Beziehungen
+which.max(degree(d, mode="in"))
+
+```
+
+__Wer ist besonders beliebt im Netzwerk?__
+
+Das Zentralitätsmaß "indegree" liefert eine Auskunft darüber, wer in einem Netzwerk besonders populär ist. 
+
+_Gesamtnetzwerk_: Capital Bra scheint im Gesamtnetzwerk mit einem Wert von 45,76% der beliebteste Knoten zu sein. Da unser Netzwerk ungerichtet ist, sind Degree und Indegree in diesem Falle identisch.
+
+### Betweenness und Broker im Netzwerk
+Der Zentralitätswert "Betweenness" zeigt, wie relevant einzelne Knoten für die Vernetzung zu anderen Knoten sind. Es geht also um Brücken oder Broker, die zwischen den einzelnen Netzwerken verbinden können. 
+
+```{r Zentralität: Betweenness als Broker, fig.height=10, fig.width=16, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# Gesamtnetzwerk
+# zeigt die normalisierte Indegree-Verteilung im Gesamtnetzwerk
+betweenness(d, normalized = TRUE)
+# liefert den Knoten mit der höchsten Anzahl von starken Beziehungen
+which.max(betweenness(d))
+
+# weist dem Broker im Gesamtnetzwerk eine Farbe zu
+V(d)[V(d)$name == "Bausa"]$vertex.color <- "red"
+
+plot(d, layout=layout_with_kk,
+     edge.arrow.size=.4,
+     edge.color="gold",
+     #vertex.color="gold",
+     vertex.frame.color=NA,
+     vertex.label.color="black",
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     main="Broker im Netzwerk",
+     sub="Hauptnetzwerk")
+
+```
+
+Bausa ist der Rapper mit dem höchsten Betweeness-Wert.
+
+### Closeness
+
+```{r Zentralität: Closeness, fig.height=10, fig.width=16, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Closeness 
+??closness
+# Closeness ist ein Zentralitätmaß, das berechnet, welche Knoten eng miteinander verbunden sind. Allerdings kann das Zentralitätsmaß nur bei Netzwerken eingesetzt werden, die nicht über mehrere Komponenten verfügen.
+
+library(igraph)
+el <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(el)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+ 
+# Closeness
+# Closness berechnet die relative Nähe zu anderen Knoten. Damit lässt sich interpretieren, welche Knoten im Netzwerk eine zentrale Rolle haben.
+
+close <- closeness(d, mode="all", normalized=TRUE)
+# liefert den Knoten mit der höchsten Anzahl von starken Beziehungen
+close
+which.max(close)
+which.min(close)
+
+# weist den größten und kleinsten Werten eine Randfarbe zu
+V(d)[V(d)$name == "Paula Douglas"]$frame.color <- "red"
+V(d)[V(d)$name == "Capital Bra"]$frame.color <- "green"
+
+plot(d, layout=layout_with_kk,
+     edge.arrow.size=.4,
+     edge.color="gold",
+     vertex.color="gold",
+     # vertex.frame.color=NA,
+     vertex.label.color="black",
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     main="Gesamtnetzwerk",
+     sub="Closeness-Werte illustriert")
+     
+
+```
+
+Im Gesamtnetzwerk hat Capital Bra mit einem Wert von 62,76% die höchste Closness-Zentralität, die niedrigste hat Paula Douglas mit 31,5%.
+
+## Erklärungsmuster: Reziprozität, Transitivität und Homophilie
+
+Für die Struktur von Netzwerken liegen einige Erklärungsmuster vor, dazu gehören Reziprozität, Transitivität und Homophilie.
+Da unser Netzwerk ungerichtet ist, konnten wir keine der Analysen durchführen, ohne das Ergebnis deutlich zu verfälschen.
+
+Reziprozität ist die gegenseitige Anerkennung in Netzwerken, d.h. dass Knoten (in gerichteten Netzwerken) gegenseitig verbunden sind.Transitivität beschreibt die Möglichkeit, dass zwischen Knoten eine Weitergabe stattfindet während Homophilie die Ähnlichkeit von Knoten betont.
+
+
+# Visualisierung
+Für die abschließende Visualisierung zeigen wir drei Grafiken. Zuerst das Gesamtnetzwerk nach dem Node-Attribut Geschlecht und mit Knotengröße nach Degree-Wert. Ein weiteres Gesamtnetzwerk ist mit Farbverläufen visualisiert. Und zuletzt ein multiples Netzwerk, in dem die Beziehungsarten (Node-Attribut relationship) farblich unterschiedlich dargestellt werden.
+
+## Gesamtnetzwerk
+
+```{r Visualisierung Gesamtnetzwerk , fig.height=20, fig.width=20, message=FALSE, warning=FALSE}
+library(igraph)
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+# Plotting 
+
+# definiert die Ränder (unten, link, oben, rechts)
+par(mar=c(10,1,8,1)) 
+
+plot(d,
+     asp=0,
+     layout=layout_nicely,
+     vertex.size=degree(d, mode="all"), # Knotengröße nach Degree-Wert
+     vertex.label.cex=2,
+     vertex.frame.color=NA,
+     edge.arrow.size=.7,
+     edge.color="black",
+     edge.width=E(d)$weight/2, #halbiert den Wert der Gewichte, um eine bessere Darstellung zu ermöglichen
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     )
+
+title("Gesamtnetzwerk",
+      cex.main = 3, col.main= "orange",
+      )
+
+par(mar=c(2,2,2,2)) 
+
+
+```
+
+## Gesamtnetzwerk nach Node-Attribut: Geschlecht
+
+```{r Geschlechtsverteilung, fig.height=22, fig.width=21, message=TRUE, warning=TRUE, paged.print=TRUE}
+
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+# Farben und Formen setzen
+
+# weist den Attributswerten entsprechende Farben zu
+V(d)[V(d)$sex == 1]$color <- "lightblue"
+V(d)[V(d)$sex == 2]$color <- "pink"
+
+
+# definiert die Ränder (unten, link, oben, rechts)
+par(mar=c(5,2,2,2)) 
+
+plot(d,
+     asp=0,
+     layout=layout_with_kk,
+     vertex.size=degree(d, mode="all"), # Knotengröße nach Degree-Wert
+     vertex.frame.color="gray20",
+     vertex.size=2,
+     vertex.label.cex=1,
+     vertex.label.color="black",
+     edge.color="black",
+     edge.curved=.2,
+     edge.curved=curve_multiple(d),
+     )
+
+title("Gesamtnetzwerk: Geschlecht", 
+      sub = "weiblich=rosa, männlich=blau
+      Knotengröße nach Degree-Wert",
+      cex.main = 2, col.main= "black",
+      cex.sub = 2, font.sub = 3, col.sub = "black")
+
+par(mar=c(2,2,2,2)) 
+
+```
+
+## Farbverläufe nach Degree-Wert
+
+```{r Visualisierung von Farbverläufen von Werten, fig.height=13, fig.width=13, message=TRUE, warning=TRUE, paged.print=TRUE}
+
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+
+# Berechnung des Degree-Wertes
+deg <- degree(d, mode = "all", loops = TRUE, normalized = FALSE)
+
+# legt die Farbskala fest
+palette = colorRampPalette(c('orange','red'))
+
+# die Palette wird in 10 Schritte unterteilt.
+fine = 5
+graphCol = palette(fine)[as.numeric(cut(deg, breaks = fine))] 
+
+# der folgende Plot ist um einige weitere Visualisierungsparameter ergänzt
+
+par(mar=c(10,1,10,1))
+
+plot(d, 
+     asp=0,
+     rescale=TRUE,
+     layout=layout_with_kk,
+     vertex.color=graphCol, #verwende als Farbe die Farbpalette 
+     vertex.label.cex=1,
+     vertex.size=8, 
+     vertex.frame.color = "white", 
+     edge.color="grey50", 
+     edge.curved=.2,
+     edge.curved=curve_multiple(d)
+)
+
+title("Wer hat die meisten Verbindungen?", 
+      sub = "Visualisierung nach Degree-Wert",
+      cex.main = 2, col.main= "darkblue",
+      cex.sub = 2, font.sub = 3, col.sub = "black")
+
+```
+
+## Multiplexes Netzwerk
+Um die verschiedenen Beziehungsarten im Netzwerk d übersichtlicher darzustellen, wollen wir diese farblich unterscheiden. 
+
+```{r Visualisierung eines multiplexe Netzwerke erstellen, fig.height=17, fig.width=17, message=TRUE, warning=TRUE, paged.print=TRUE}
+library(igraph)
+edges <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapedge.csv", header=T, as.is=T, sep = ",")
+nodes <- read.csv("https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Deutschrapnode.csv", header=T, as.is=T, sep = ",")
+edgematrix <-as.matrix(edges)
+d <- graph_from_data_frame(d=edgematrix, vertices=nodes, directed=F)
+
+
+# definiert die Farbe der Relation
+E(d)[E(d)$relationship == 1]$color <- "blue" 
+E(d)[E(d)$relationship == 2]$color <- "darkgreen"
+E(d)[E(d)$relationship == 3]$color <- "red"
+E(d)[E(d)$relationship == 4]$color <- "orange"
+
+# Plot mit den gesetzten Farben für das Attribut Beziehung realisieren
+
+# Visualisierungsparameter festlegen
+par(mar=c(8,3,3,3)) 
+
+# Plot mit den gesetzten Farben für das Attribut Beziehung realisieren
+plot(d,
+     asp=0,
+     layout=layout_with_kk,
+     vertex.color="grey",
+     vertex.frame.color="black",
+     vertex.size=10,
+     edge.curved=curve_multiple(d),
+     main="Multiplexes Netzwerk: Art der Beziehung",
+     sub="Kantenfarbe
+     blau=neutrales Verhältnis, grün=positives Verhältnis, rot=negatives Verhältnis, orange=verwandt")
+
+par(mar=c(0,0,0,0)) 
+# setzt die Seitenaufteilung zurück
+par(mfrow=c(1,1), mar=c(2,0,2,0)) 
+
+```
+
+
+# Diskussion: Fazit, Limitationen und Ausblick
+
+## Analyse der Arbeitshypothesen
+
+“Männliche Akteure featuren häufiger mit anderen männlichen Akteuren und umgekehrt” Reziprozität: 
+Diese Hypothese wurde bestätigt, indem die Features zwischen männlichen Rappern und weiblichen Rappern analysiert wurden. Nach der Analyse der Teilnetzwerke wird deutlich, dass männliche Rapper nicht nur die Mehrheit stellen, sondern auch untereinander besser vernetzt sind.
+
+“Männliche Akteure sind im Schnitt erfolgreicher und besser vernetzt, als weibliche Akteure.”
+Diese Hypothese kann ebenfalls bestätigt werden. Im Zentrum des Netzwerks sind ausschließlich männliche Akteure, während die weiblichen Akteure am äußeren Rande des Netzwerks angesiedelt sind. Den Erfolg der Rapper haben wir anhand der monatlichen Spotify Hörer festgelegt. Hierbei waren zum Zeitpunkt unserer Datenerhebung nur männliche Rapper in den Top 10. Die erste Rapperin kam erst auf Platz 16. Insgesamt sind in den Top 50 nur 5 der Rapper weiblich und die letzten fünf Plätze der Liste belegen Frauen. Zu beachten ist zwar, dass wir wesentlich weniger Rapperinnen, als Rapper in unserem Netzwerk integriert haben, jedoch liegt das vor allem daran, dass es nicht so viele und besonders nicht viele erfolgreiche weibliche Rapperinnen in Deutschland gibt.
+
+“Rapper/innen, die gut vernetzt sind, sind erfolgreicher”
+Der Rapper mit den meisten Degrees und den meisten Features ist Capital Bra. Er ist der zweiterfolgreichste Rapper im Netzwerk
+
+“Es gibt einzelne Gruppierungen von Rapper/innen, die sehr eng vernetzt sind, sowie einige außenstehende Rapper/innen mit kaum oder keinen Beziehungen”
+Hypothese kann bestätigt werden -> s. Clusteranalyse: “Gangs” wie 187 oder KMN, dagegen Künstler mit keinem oder einem Feature wie Montez oder Pashanim
+
+“Das Verhältnis untereinander ist größtenteils neutral oder positiv, es gibt allerdings vereinzelte Konflikte zwischen Rapper/innen”
+Diese Hypothese kann bestätigt werden: Während es im Teilnetzwerk Feindschaft bzw. Konflikte nur 6 Kanten gibt, besteht das Netzwerk der positiven Beziehungen aus insgesamt 164 Kanten
+
+“Homophilie spielt bei den Beziehungen eine Rolle: z.B. in Bezug auf Alter, Wohnort oder Nationalität”
+Wir haben herausgefunden, dass eine Vernetzung zwischen Rappern gleicher Herkunft viel häufiger und wahrscheinlicher ist. Homophilie-Effekt --> bezieht sich darauf, dass sich oftmals Freundschaften zwischen Personen mit ähnlicher kultureller Prägung bilden. Ein Beispiel ist das dritte Teilnetzwerk, das nur deutsche Rapper vertritt. Hier sieht man eine stark definierte Gruppierung.
+
+## Neue Erkenntnisse
+Unsere Arbeitshypothesen (siehe oben) haben sich größtenteils bestätigt. Wir sind bei unserer Analyse auf keine besonders überraschenden oder unerwarteten Erkenntnisse gestoßen. 
+
+## Limitationen
+Eine Limitation unserer Datenanalyse ist die Anzahl der untersuchten Rapper/innen. Im Rahmen unseres Projekts konnten wir nur eine begrenzte Auswahl an Akteuren (60) untersuchen. Alle Aussagen lassen sich dementsprechend nur auf diese Auswahl beziehen und nur begrenzt verallgemeinern. Darüber hinaus schwanken manche erhobenen Informationen stark. Die Hörerzahlen auf Spotify ändern sich wöchentlich - was u.a. auch davon abhängig ist, ob ein Song des Künstlers bzw. der Künstlerin aktuell in den Charts ist. Es ist daher nur bis zu einem gewissen Grad möglich, eine Aussage über den Erfolg der Akteure zu treffen, gibt aber zumindest einen Richtwert. 
+
+
+## Zukünftige Forschung 
+Nächste Schritte in der Forschung könnten den Fokus vermehrt auf die weiblichen Akteure legen. Es könnten mehr Rapperinnen und deren Beziehungen untereinander untersucht werden. Darüber hinaus könnten im Allgemeinen mehr Akteure einbezogen werden, sodass die Analyse umfassender und das Endergebnis repräsentativer ist. 
+
+# Anlage
+## Literatur
+Hummel & Sodeur (2010). Dyaden und Triaden. In: Stegbauer, C. & Häußling, R. (Hg.): Handbuch Netzwerkforschung. Wiesbaden: VS Verlag. S. 379-395
+
+Fuhse (2018). Netzwerkmechanismen. In: Soziale Netzwerke: Konzepte und Forschungsmethoden. Konstanz, München: UVK Verlagsgesellschaft. S. 155-174
+
+## Codebuch
+[Codebuch](https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Codebuch.csv)
+
+```{r Übersicht Netzwerkattribute}
+
+list.vertex.attributes(d)
+
+list.edge.attributes(d)
+
+```
+
+
+Das Netzwerk hat nach dem [Codebuch](https://raw.githubusercontent.com/LuisaFunk/SNAprojekt/main/Codebuch.csv) folgende Attribute:
+
+*Vertex-Attribute*
+- id: Codierung durch die ersten 3 Buchstaben des Künstlernamens
+- name: Künstlername/Pseudonym
+- aka: bürgerlicher Name
+- home: Wohnort bzw. Hauptsitz des Künstlers
+- sex: Geschlecht (1=männlich, 2=weiblich)
+- age: Alter (1=18-24, 2=25-29, 3=30-34, 4=35-39, 5=40>)
+- fans: monatliche Hörer auf Spotify (1=unter 1 Mio, 2=1-2 Mio, 3=2-3 Mio, 4=3-4Mio, 5=mehr als 4 Mio)
+- nationality: Nationalität 
+- criminality: Straftaten/Auffälligkeiten (1=keine Auffälligkeiten, 2=Kontakt mit der Polizei, 3=Verurteilung, 4=Bewährungsstrafe, 5=Gefängnisstrafe )
+
+Die Vertex-Attribute treffen auf alle Knoten zu.
+
+*Edge-Attribute*
+- relationship: Art der Beziehung/Verhältnis (1=neutral, 2=positives Verhältnis/Freundschaft/Liebesbeziehung, 3=negatives Verhältnis/Feindschaft, 4=Verwandschaft)
+- feature: Kollaboration (1=ein Feature, 2=2 oder mehr Features, 3=Album zusammen, 4= Tour zusammen)
+- musiclabel: (Ehemalige) Zugehörikeit zum gleichen Label (1=ja, 2=nein)
+
+Wir haben insgesamt drei verschiedene Edge-Attribute erhoben: Relationship, Musiclabel und Feature. Durch sie können wir bestimmen, wie die Rapper/innen zueinander stehen, wer zum selben Label gehört (hat) und wer wie intensiv mit wem zusammengearbeitet hat. Den Fokus haben wir bei unserer Erhebung besonders auf die Features gelegt. Die Beziehung (=relationship) haben wir nur dann erhoben, wenn die Rapper/innen entweder zusammengearbeitet hatten oder im selben Label waren, sodass davon auszugehen war, dass sich diese auch kennen. Es kam allerdings auch immer wieder vor, dass die Rapper/innen zwar im selben Label waren, aber nicht gefeatured haben oder umgekehrt. In diesem Fall haben wir "feature" mit NA bzw. 99 codiert. Umgekehrt gab es auch Akteure, die miteinander kollaboriert hatten, aber an keinem Punkt ihrer Karriere im selben Label waren. Insgesamt haben sich bei unserer Erhebung 298 Beziehungen zwischen Akteuren ergeben, die entweder mindestens ein Feature gemeinsam hatten oder imselben Musiklabel waren.  
+
+
+## Datenmaterial und Skript
+[Datensatz] 
+
+https://github.com/LuisaFunk/SNAprojekt/ 
+
+## Team, Arbeitsaufwand und Lessons Learned
+
+### Teammitglieder
+- Luisa Funk
+- Fiona Peter
+- Martina Coluccia
+- Anja Kroha
+- Victoria Walter (nach dem 3. Semester gegangen)
+
+### Arbeitsaufwand und Rollen im Team
+- Luisa Funk: Projektleitung, Coding Gesamtnetzwerk + Coding Edge- und Nodeattribute: 30h
+- Fiona Peter: Coding Teilnetzwerke Geschlecht + Cluster/Komponenten + Einleitung und Schluss: 25h
+- Martina Coluccia: Coding Teilnetzwerke Criminality/Nationality + Dyaden und Triaden + Reziprozität: 25h
+- Anja Kroha: Coding Ego-Netzwerke + Multiplexes Netzwerk + Abschließende Visualisierung: 23h
+
+Die Datenerhebung erfolgte ebenfalls aufgeteilt, jedes Teammitglied erhob 11-12 Rapper*innen und ihre Beziehungen.
+
+### Lessons learned
+Wir haben im Laufe unserer Datenerhebung bzw. Datenanalyse viel Neues über Netzwerke und die Arbeit mit R/RStudio gelernt. Wir verstehen, wie Netzwerke entstehen, wie sie funktionieren und wie sie analysiert werden können. In Bezug auf die Zusammenarbeit im Team haben wir gelernt, wie wichtig klare Kommunikation untereinander wirklich ist. Darüber hinaus haben wir erneut festgestellt, dass gerechte Arbeitsteilung und gegenseitige Unterstützung bei Schwierigkeiten/Problemen das A und O bei Team-Projekten sind.
